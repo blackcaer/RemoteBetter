@@ -21,8 +21,6 @@ class RemoteBetter():
             print("!!!!!!! DRIVER IS NOT UNDETECTABLE, LEAVING !!!!!!!")
             exit()
 
-        self.load_rch_cookies()
-
     def tutututu(self):
         self.sb.driver.uc_open(RemoteBetter.url_coinflip)
 
@@ -77,38 +75,29 @@ class RemoteBetter():
                 price = float(price_str.replace('$', ''))
             return name.strip(), price
 
+        print("scrapping started")
+
         sb = self.sb
 
-        # '.Mdl__inv-footer .ButtonGroup__space button'
-        """btns = self.driver.find_element('.Mdl__inv-footer .ButtonGroup__space button')
-        btn_select_all = btns.find_element(By.XPATH,"//*[contains(text(), 'Select all')]")
-        btn_refresh = btns[1]
-        btn_deposit = self.driver.find_element(By.XPATH,"//*[contains(text(), 'Deposit')]")
-        btn_deposit = self.driver.find_element(By.XPATH,"//*[matches(@text,'empire burlesque','i')]")"""
-
-        sb.driver.sleep(1)
-        print("scrapping started")
-        btn_refresh = None
-
-        btns_panel:WebElement = sb.find_element('.Mdl__inv-footer .ButtonGroup__space button')
+        btns_panel: WebElement = sb.find_element('.Mdl__inv-footer .ButtonGroup__space button')
 
         btn_deposit = btns_panel.find_element(By.XPATH, "//*[contains(text(), 'Deposit')]")
         btn_refresh = btns_panel.find_element(By.XPATH, "//*[contains(text(), 'Refresh')]")
         btn_selectall = btns_panel.find_element(By.XPATH, "//*[contains(text(), 'Select All')]")
 
         items_on_site = sb.find_elements(".Inventory-item")
-        items=[]
+        print("Items total: ",len(items_on_site))
+
         for item_on_site in items_on_site:
             print(item_on_site.get_attribute("innerText"))
             item_text = item_on_site.get_attribute("innerText")
             name, price = scrape_text(item_text)
             print("===",name, " ",price)
-            #items.append(ItemRust(name,price_rchshop=price))    # to nie jest price rchshop i nie powinno tak dzialac, bo tu duza cena to lepiej
+            if price <= 0.0:
+                continue    # unsuitable
+            self.inventory.append(ItemRust(name,price_rch_bet=price))    # to nie jest price rchshop i nie powinno tak dzialac, bo tu duza cena to lepiej
 
-
-
-        sb.driver.sleep(10)
-
+        print("Items minus unsuitable: ", len(self.inventory))
     def update_inventory(self):
         """ Get current inventory for rustchance.
         Czy request do api da wystarczająco info aby selenium wiedzialo co kliknac?
@@ -118,17 +107,43 @@ class RemoteBetter():
         # convert to itemrust
         pass
 
-    def select_items_taxed(self, minprice, maxprice, min_tax_percent, max_tax_percent):
-        """ Select which items to bet with taxed item (in order to be able to join drop).
+    def select_items_taxed(self, minprice, maxprice, min_tax_frac, max_tax_frac):
+        """ Select which items to bet that the bet will be taxed (in order to be able to join drop).
          minprice, maxprice - Bet amount has to be in range between those two values
-         min_tax_percent, max_tax_percent - Minimum and maximum percent of total pool size (2*your_bet) that has to be possible to be taxed.
+         min_tax, max_tax= - Minimum and maximum fraction of total pool size (2*your_bet) that has to be
+         possible to be taxed.
          There has to me an item of value between min_tax_percent*pool_size and max_tax_percent*pool_size
          """
+        if not (0 <= min_tax_frac <= 1 and 0 <= max_tax_frac <= 1):
+            raise ValueError("min_tax_frac and max_tax_frac has to be in range <0,1>")
+
+        max_pool = 2*maxprice
+        max_tax_general = max_tax_frac * max_pool
+
         selected_items = []
+        add_queue = [*self.inventory]
+        add_queue.sort(key=lambda item: item.price_bet/item.value_single,reverse=True)
+
+        index,counter = 0,0
+        while index < len(add_queue):
+            if add_queue[index].price_bet < max_tax_general:
+                add_queue.append(add_queue.pop(index))  # Move at the end of the list
+            else:
+                index += 1
+            counter+=1
+            if counter>=len(add_queue):
+                break
+
+        print("name", " ", "price", " ", "val")
+        for i in add_queue:
+            i: ItemRust
+            print(i.name, " ", i.price_bet, " ", i.value_single)
 
         for item in self.inventory:
-            name = ""  # placeholder
-            price = 0  # placeholder
+            item: ItemRust
+            name = item.name
+            price = item.price_bet
+            value = item.value_single
 
         return selected_items
 

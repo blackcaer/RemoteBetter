@@ -4,9 +4,10 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="86ac52e8-ce93-470a-9a94-540b20bdf0e5" name="Changes" comment="1">
-      <change afterPath="$PROJECT_DIR$/RemoteBetter.py" afterDir="false" />
+    <list default="true" id="86ac52e8-ce93-470a-9a94-540b20bdf0e5" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/RemoteBetter.py" beforeDir="false" afterPath="$PROJECT_DIR$/RemoteBetter.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -48,7 +49,7 @@
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "git-widget-placeholder": "master",
     "ignore.virus.scanning.warn.message": "true",
-    "last_opened_file_path": "C:/Users/kryspin/Documents/03 Steam projects/00_modules/ItemRust",
+    "last_opened_file_path": "C:/Users/kryspin/Documents/03 Steam projects/04_Remote_better",
     "settings.editor.selected.configurable": "com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable"
   }
 }]]></component>
@@ -105,11 +106,20 @@
       <option name="project" value="LOCAL" />
       <updated>1710881925068</updated>
     </task>
-    <option name="localTasksCounter" value="2" />
+    <task id="LOCAL-00002" summary="Started work on project, boilerplate/testing selenium">
+      <option name="closed" value="true" />
+      <created>1711998320129</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1711998320129</updated>
+    </task>
+    <option name="localTasksCounter" value="3" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="1" />
-    <option name="LAST_COMMIT_MESSAGE" value="1" />
+    <MESSAGE value="Started work on project, boilerplate/testing selenium" />
+    <option name="LAST_COMMIT_MESSAGE" value="Started work on project, boilerplate/testing selenium" />
   </component>
 </project>
