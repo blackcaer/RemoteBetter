@@ -1,11 +1,12 @@
 import asyncio
-from selenium.webdriver.remote.webelement import WebElement
-from selenium.webdriver.common.by import By
-from seleniumbase import BaseCase
-
 import inspect
 
 from ItemRust import ItemRust
+from prettytable import PrettyTable
+from selenium.webdriver.common.by import By
+from selenium.webdriver.remote.webelement import WebElement
+from seleniumbase import BaseCase
+
 
 # BaseCase.main(__name__, __file__)
 class RemoteBetter():
@@ -24,21 +25,19 @@ class RemoteBetter():
     def tutututu(self):
         self.sb.driver.uc_open(RemoteBetter.url_coinflip)
 
-        #print(self.sb.find_link_text("blog"))
-        #self.sb.find_link_text("blog").click()
+        # print(self.sb.find_link_text("blog"))
+        # self.sb.find_link_text("blog").click()
 
         print("\nPresence check:")
         print(self.sb.is_element_present('.ButtonGroup__space > button[class*="Button--large"]'))
 
-        #print(self.driver.is_element_present('.ButtonGroup__space > button[class*="Button--large"]'))
+        # print(self.driver.is_element_present('.ButtonGroup__space > button[class*="Button--large"]'))
 
     def load_rch_cookies(self):
         sb = self.sb
         url_404 = "https://rustchance.com/coinfli"
         sb.driver.uc_open(url_404)
-        sb.driver.add_cookie(
-            {'domain': 'rustchance.com', 'httpOnly': False, 'name': 'pdfcc', 'path': '/', 'sameSite': 'Lax',
-             'secure': True, 'value': '6'})
+
         sb.driver.add_cookie(
             {'domain': 'rustchance.com', 'httpOnly': False, 'name': 'fontsCssCache', 'path': '/', 'sameSite': 'Lax',
              'secure': True, 'value': 'True'})
@@ -51,8 +50,8 @@ class RemoteBetter():
 
     def click_create_coinflip(self):
         sb = self.sb
-        CREATE_COINFLIP_SELECTOR='.ButtonGroup__space .Button--large'
-        CONTINUE_SELECTOR='.Modal-body__bottom  .Landmines__lobby-actions__button'
+        CREATE_COINFLIP_SELECTOR = '.ButtonGroup__space .Button--large'
+        CONTINUE_SELECTOR = '.Modal-body__bottom  .Landmines__lobby-actions__button'
 
         """if not sb.is_element_present(CREATE_COINFLIP_SELECTOR):
             print(CREATE_COINFLIP_SELECTOR.__name__+" not visible")
@@ -86,18 +85,20 @@ class RemoteBetter():
         btn_selectall = btns_panel.find_element(By.XPATH, "//*[contains(text(), 'Select All')]")
 
         items_on_site = sb.find_elements(".Inventory-item")
-        print("Items total: ",len(items_on_site))
+        print("Items total: ", len(items_on_site))
 
         for item_on_site in items_on_site:
             print(item_on_site.get_attribute("innerText"))
             item_text = item_on_site.get_attribute("innerText")
             name, price = scrape_text(item_text)
-            print("===",name, " ",price)
+            print("===", name, " ", price)
             if price <= 0.0:
-                continue    # unsuitable
-            self.inventory.append(ItemRust(name,price_rch_bet=price))    # to nie jest price rchshop i nie powinno tak dzialac, bo tu duza cena to lepiej
+                continue  # unsuitable
+            self.inventory.append(ItemRust(name,
+                                           price_rch_bet=price))  # to nie jest price rchshop i nie powinno tak dzialac, bo tu duza cena to lepiej
 
         print("Items minus unsuitable: ", len(self.inventory))
+
     def update_inventory(self):
         """ Get current inventory for rustchance.
         Czy request do api da wystarczająco info aby selenium wiedzialo co kliknac?
@@ -107,43 +108,126 @@ class RemoteBetter():
         # convert to itemrust
         pass
 
-    def select_items_taxed(self, minprice, maxprice, min_tax_frac, max_tax_frac):
+    def select_items_taxed(self, minprice, maxprice, min_tax_frac, max_tax_frac, max_item_count=10):
         """ Select which items to bet that the bet will be taxed (in order to be able to join drop).
          minprice, maxprice - Bet amount has to be in range between those two values
          min_tax, max_tax= - Minimum and maximum fraction of total pool size (2*your_bet) that has to be
          possible to be taxed.
          There has to me an item of value between min_tax_percent*pool_size and max_tax_percent*pool_size
          """
+
+        def create_queue(inventory):
+            add_queue = [*inventory]
+            add_queue.sort(key=lambda item: item.price_bet / item.value_single, reverse=True)
+            taxables = []
+            index, counter = 0, 0
+            while index < len(add_queue):
+                if add_queue[index].price_bet < max_tax_general:
+                    taxable = add_queue.pop(index)
+                    add_queue.append(taxable)  # Move at the end of the list
+                    taxables.append(taxable)
+                else:
+                    index += 1
+                counter += 1
+                if counter >= len(add_queue):
+                    break
+
+            return add_queue, taxables
+
+        def _print_items(itemrust_tab):
+            tab = PrettyTable(["name", "price", "val", "price/val"])
+
+            if not itemrust_tab:
+                print("itemrus_tab: ",itemrust_tab)
+                print(tab)
+                print("Total price: 0$")
+                return
+
+            total_price = 0
+            for i in itemrust_tab:
+                i: ItemRust
+                tab.add_row([i.name, i.price_bet, i.value_single, round(i.price_bet / i.value_single, 2)])
+                total_price += i.price_bet
+
+            print(tab)
+            print(f"Total price: {round(total_price, 2)}$")
+
+        def find_good_items(queue, minp, maxp, starting_sum=0.0):
+            # TODO item limit
+            queue = [*queue]
+            items = []
+            curr_sum = starting_sum
+
+            for qi in queue:
+                qi: ItemRust
+                new_sum = curr_sum + qi.price_bet
+
+                if hasattr(qi, 'selected') and qi.selected: # So it doesn't take taxed items two times
+                    continue
+                if new_sum > maxp:
+                    continue
+                elif new_sum > minp:
+                    # new sum in <minp,maxp>
+                    items.append(qi)
+                    return items
+                else:  # new_sum < minp
+                    items.append(qi)
+                    curr_sum = new_sum
+
+            return None
+
         if not (0 <= min_tax_frac <= 1 and 0 <= max_tax_frac <= 1):
             raise ValueError("min_tax_frac and max_tax_frac has to be in range <0,1>")
 
-        max_pool = 2*maxprice
+        selected_items = []
+        max_pool = 2 * maxprice
         max_tax_general = max_tax_frac * max_pool
 
-        selected_items = []
-        add_queue = [*self.inventory]
-        add_queue.sort(key=lambda item: item.price_bet/item.value_single,reverse=True)
+        add_queue, taxables = create_queue(self.inventory)
+        print("\nAdd queue:")
+        _print_items(add_queue)
+        print("\nTax queue:")
+        _print_items(taxables)
 
-        index,counter = 0,0
-        while index < len(add_queue):
-            if add_queue[index].price_bet < max_tax_general:
-                add_queue.append(add_queue.pop(index))  # Move at the end of the list
-            else:
-                index += 1
-            counter+=1
-            if counter>=len(add_queue):
-                break
+        """all_parts = 10  # Divide price_range into all_parts parts to prioritize finding items with price in lower parts
+        whole_price_range = (maxprice - minprice)
+        for curr_parts in range(1, all_parts + 1):
+            # Try to find items in an increasing price range, this helps find the cheapest suitable items combination
+            range_fraction = curr_parts / all_parts
+            price_range = range_fraction * whole_price_range
+            selected_items = find_good_items(add_queue, minprice, minprice + price_range)
 
-        print("name", " ", "price", " ", "val")
-        for i in add_queue:
-            i: ItemRust
-            print(i.name, " ", i.price_bet, " ", i.value_single)
+            print(f"Iteration {curr_parts} of {all_parts}")
+            _print_items(selected_items)
+            if selected_items is not None:
+                break"""
 
-        for item in self.inventory:
-            item: ItemRust
-            name = item.name
-            price = item.price_bet
-            value = item.value_single
+        def select(add_queue, taxables):
+            tax_asc = sorted(taxables, key=lambda x: x.price_bet)
+            # TODO przygotowac na edge case'y, na razie podstawowa funkcjonalnosc
+            result = None
+
+            for tax in tax_asc:
+                tax: ItemRust
+                minp = max(round(tax.price_bet / (2*max_tax_frac), 2), minprice)
+                maxp = min(round(tax.price_bet / (2*min_tax_frac), 2), maxprice)
+                if minp >= maxp:
+                    continue
+
+                tax.selected = True
+                items_in_range = find_good_items(add_queue, minp, maxp, starting_sum=tax.price_bet)
+                if items_in_range:
+                    del tax.selected
+                    result = [tax] + items_in_range
+                    break
+                tax.selected = False
+
+            return result
+
+        selected_items = select(add_queue, taxables)
+
+        print("\n\n Selected items:")
+        _print_items(selected_items)
 
         return selected_items
 

@@ -1,14 +1,12 @@
 import asyncio
 
 import aiohttp
+import jsonpickle
+from ItemRust import ItemRust
 from ItemRustDatabase import ItemRustDatabase
+from seleniumbase import SB
 
 from RemoteBetter import RemoteBetter
-from seleniumbase import SB
-import jsonpickle
-
-from SteamTradeHandler import SteamTradeHandler
-from ItemRust import ItemRust
 
 ITEMDB_FILE = "rustItemDatabase.txt"
 
@@ -22,10 +20,12 @@ async def body():
     # bet selected items
     # accept gifts after that
 
-    LOAD_INV=True  # for debugging
-    minprice, maxprice = 11, 15
+    minprice = 11.5
+    maxprice = 16
+    min_tax_frac = 0.02
+    max_tax_frac = 0.05
 
-    with SB(demo=True,uc=True, uc_cdp_events=True, uc_cdp=True,test=False) as sb:
+    with SB(demo=True, uc=True, uc_cdp_events=True, uc_cdp=True, test=TEST_MODE) as sb:
         r = RemoteBetter(sb)
 
         if LOAD_INV:
@@ -36,39 +36,44 @@ async def body():
             r.load_rch_cookies()
             r.open_site_coinflip()
             r.click_create_coinflip()
-            r.scrap_eq_from_create_cf()
+            r.x()
 
             with open('inventory_data.txt', 'w') as file:
                 jsonstr = jsonpickle.dumps(r.inventory)
                 file.write(jsonstr)
 
-        tasks=[]
+        tasks = []
         for item in r.inventory:
-            item:ItemRust
+            item: ItemRust
             task = asyncio.create_task(item.update_async())
             tasks.append(task)
         for task in tasks:
-            await task
+            try:
+                await task
+            except aiohttp.client_exceptions.ClientConnectorError as e:
+                print("Connection error: " + str(e))
 
-        r.inventory = list(filter(lambda x:x.all_success,r.inventory))
-        print("Items minus failures: ",len(r.inventory))
+        r.inventory = list(filter(lambda x: x.all_success, r.inventory))
+        print("Items minus failures: ", len(r.inventory))
 
-        selected_items = r.select_items_taxed(minprice,maxprice,0.02,0.05)
+        selected_items = r.select_items_taxed(minprice, maxprice, min_tax_frac, max_tax_frac)
 
-        if LOAD_INV:
-            return
-
-        #r.update_inventory()
-        #selected_items = r.select_items_drop(minprice, maxprice)
-        #print(selected_items)
-        #r.bet_if_needed()
-        #await r.wait_for_winnings_and_accept()
+        # r.update_inventory()
+        # selected_items = r.select_items_drop(minprice, maxprice)
+        # print(selected_items)
+        # r.bet_if_needed()
+        # await r.wait_for_winnings_and_accept()
 
         sb.sleep(80)
 
 
+# for debugging
+LOAD_INV = True
+TEST_MODE = False  # do not expire db
+
+
 async def main():
-    itemdb = ItemRustDatabase(ITEMDB_FILE)
+    itemdb = ItemRustDatabase(ITEMDB_FILE, do_not_expire=TEST_MODE)
     itemdb.load_database()
     ItemRust.set_database(itemdb)
 
@@ -82,4 +87,3 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
-

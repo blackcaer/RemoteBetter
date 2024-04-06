@@ -4,8 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="86ac52e8-ce93-470a-9a94-540b20bdf0e5" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
+    <list default="true" id="86ac52e8-ce93-470a-9a94-540b20bdf0e5" name="Changes" comment="Updating items, failures handling&#10;Temporary loading inventory from file for tests&#10;Loading&amp;saving itemrust database">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/RemoteBetter.py" beforeDir="false" afterPath="$PROJECT_DIR$/RemoteBetter.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
@@ -25,13 +24,29 @@
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
+  <component name="GitHubPullRequestSearchHistory">{
+  &quot;lastFilter&quot;: {
+    &quot;state&quot;: &quot;OPEN&quot;,
+    &quot;assignee&quot;: &quot;blackcaer&quot;
+  }
+}</component>
+  <component name="GithubPullRequestsUISettings">
+    <option name="selectedUrlAndAccountId">
+      <UrlAndAccount>
+        <option name="accountId" value="41dc5c71-691f-4de4-a935-04e8a71c5afb" />
+        <option name="url" value="https://github.com/blackcaer/RemoteBetter" />
+      </UrlAndAccount>
+    </option>
+  </component>
   <component name="HighlightingSettingsPerFile">
+    <setting file="file://$PROJECT_DIR$/../00_modules/ItemRust/ItemRust.py" root0="SKIP_INSPECTION" />
     <setting file="file://$PROJECT_DIR$/../00_modules/SteamTradeHandler/SteamTradeHandler.py" root0="SKIP_INSPECTION" />
     <setting file="file://$PROJECT_DIR$/.venv/Lib/site-packages/seleniumbase/__init__.py" root0="SKIP_INSPECTION" />
     <setting file="file://$PROJECT_DIR$/.venv/Lib/site-packages/seleniumbase/core/browser_launcher.py" root0="SKIP_INSPECTION" />
     <setting file="file://$PROJECT_DIR$/.venv/Lib/site-packages/seleniumbase/core/sb_driver.py" root0="SKIP_INSPECTION" />
     <setting file="file://$PROJECT_DIR$/.venv/Lib/site-packages/seleniumbase/fixtures/base_case.py" root0="SKIP_INSPECTION" />
     <setting file="file://$PROJECT_DIR$/.venv/Lib/site-packages/seleniumbase/fixtures/page_actions.py" root0="SKIP_INSPECTION" />
+    <setting file="file://$PROJECT_DIR$/.venv/Lib/site-packages/seleniumbase/plugins/sb_manager.py" root0="SKIP_INSPECTION" />
   </component>
   <component name="ProjectColorInfo">{
   &quot;associatedIndex&quot;: 2
@@ -49,7 +64,7 @@
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "git-widget-placeholder": "master",
     "ignore.virus.scanning.warn.message": "true",
-    "last_opened_file_path": "C:/Users/kryspin/Documents/03 Steam projects/04_Remote_better",
+    "last_opened_file_path": "C:/Users/kryspin/Documents/03 Steam projects/03_Steam_evaluators",
     "settings.editor.selected.configurable": "com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable"
   }
 }]]></component>
@@ -114,12 +129,39 @@
       <option name="project" value="LOCAL" />
       <updated>1711998320129</updated>
     </task>
-    <option name="localTasksCounter" value="3" />
+    <task id="LOCAL-00003" summary=".">
+      <option name="closed" value="true" />
+      <created>1712010048406</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1712010048406</updated>
+    </task>
+    <task id="LOCAL-00004" summary="Started work on select_items_taxed">
+      <option name="closed" value="true" />
+      <created>1712010117889</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1712010117889</updated>
+    </task>
+    <task id="LOCAL-00005" summary="Updating items, failures handling&#10;Temporary loading inventory from file for tests&#10;Loading&amp;saving itemrust database">
+      <option name="closed" value="true" />
+      <created>1712010318048</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1712010318048</updated>
+    </task>
+    <option name="localTasksCounter" value="6" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="1" />
     <MESSAGE value="Started work on project, boilerplate/testing selenium" />
-    <option name="LAST_COMMIT_MESSAGE" value="Started work on project, boilerplate/testing selenium" />
+    <MESSAGE value="." />
+    <MESSAGE value="Started work on select_items_taxed" />
+    <MESSAGE value="Updating items, failures handling&#10;Temporary loading inventory from file for tests&#10;Loading&amp;saving itemrust database" />
+    <option name="LAST_COMMIT_MESSAGE" value="Updating items, failures handling&#10;Temporary loading inventory from file for tests&#10;Loading&amp;saving itemrust database" />
   </component>
 </project>
