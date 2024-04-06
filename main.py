@@ -23,7 +23,7 @@ async def body():
     minprice = 11.5
     maxprice = 16
     min_tax_frac = 0.02
-    max_tax_frac = 0.05
+    max_tax_frac = 0.1
 
     with SB(demo=True, uc=True, uc_cdp_events=True, uc_cdp=True, test=TEST_MODE) as sb:
         r = RemoteBetter(sb)

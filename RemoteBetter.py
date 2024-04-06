@@ -108,7 +108,7 @@ class RemoteBetter():
         # convert to itemrust
         pass
 
-    def select_items_taxed(self, minprice, maxprice, min_tax_frac, max_tax_frac, max_item_count=10):
+    def select_items_taxed(self, min_bet, max_bet, min_tax_frac, max_tax_frac, max_item_count=10):
         """ Select which items to bet that the bet will be taxed (in order to be able to join drop).
          minprice, maxprice - Bet amount has to be in range between those two values
          min_tax, max_tax= - Minimum and maximum fraction of total pool size (2*your_bet) that has to be
@@ -152,7 +152,7 @@ class RemoteBetter():
             print(tab)
             print(f"Total price: {round(total_price, 2)}$")
 
-        def find_good_items(queue, minp, maxp, starting_sum=0.0):
+        def _find_good_items(queue, minp, maxp, starting_sum=0.0):
             # TODO item limit
             queue = [*queue]
             items = []
@@ -176,32 +176,6 @@ class RemoteBetter():
 
             return None
 
-        if not (0 <= min_tax_frac <= 1 and 0 <= max_tax_frac <= 1):
-            raise ValueError("min_tax_frac and max_tax_frac has to be in range <0,1>")
-
-        selected_items = []
-        max_pool = 2 * maxprice
-        max_tax_general = max_tax_frac * max_pool
-
-        add_queue, taxables = create_queue(self.inventory)
-        print("\nAdd queue:")
-        _print_items(add_queue)
-        print("\nTax queue:")
-        _print_items(taxables)
-
-        """all_parts = 10  # Divide price_range into all_parts parts to prioritize finding items with price in lower parts
-        whole_price_range = (maxprice - minprice)
-        for curr_parts in range(1, all_parts + 1):
-            # Try to find items in an increasing price range, this helps find the cheapest suitable items combination
-            range_fraction = curr_parts / all_parts
-            price_range = range_fraction * whole_price_range
-            selected_items = find_good_items(add_queue, minprice, minprice + price_range)
-
-            print(f"Iteration {curr_parts} of {all_parts}")
-            _print_items(selected_items)
-            if selected_items is not None:
-                break"""
-
         def select(add_queue, taxables):
             tax_asc = sorted(taxables, key=lambda x: x.price_bet)
             # TODO przygotowac na edge case'y, na razie podstawowa funkcjonalnosc
@@ -209,13 +183,13 @@ class RemoteBetter():
 
             for tax in tax_asc:
                 tax: ItemRust
-                minp = max(round(tax.price_bet / (2*max_tax_frac), 2), minprice)
-                maxp = min(round(tax.price_bet / (2*min_tax_frac), 2), maxprice)
+                minp = max(round(tax.price_bet / (2*max_tax_frac), 2), min_bet)
+                maxp = min(round(tax.price_bet / (2*min_tax_frac), 2), max_bet)
                 if minp >= maxp:
                     continue
 
                 tax.selected = True
-                items_in_range = find_good_items(add_queue, minp, maxp, starting_sum=tax.price_bet)
+                items_in_range = _find_good_items(add_queue, minp, maxp, starting_sum=tax.price_bet)
                 if items_in_range:
                     del tax.selected
                     result = [tax] + items_in_range
@@ -223,6 +197,19 @@ class RemoteBetter():
                 tax.selected = False
 
             return result
+
+        if not (0 <= min_tax_frac <= 1 and 0 <= max_tax_frac <= 1):
+            raise ValueError("min_tax_frac and max_tax_frac has to be in range <0,1>")
+
+        max_pool = 2 * max_bet     # Your and your opponent's bet
+        max_tax_general = max_tax_frac * max_pool   # Max possible tax
+
+        add_queue, taxables = create_queue(self.inventory)  # add_queue - all items, taxables - items
+
+        print("\nAdd queue:")
+        _print_items(add_queue)
+        print("\nTaxables:")
+        _print_items(taxables)
 
         selected_items = select(add_queue, taxables)
 
