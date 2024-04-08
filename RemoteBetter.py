@@ -5,10 +5,12 @@ from ItemRust import ItemRust
 from prettytable import PrettyTable
 from selenium.webdriver.common.by import By
 from selenium.webdriver.remote.webelement import WebElement
+from selenium.webdriver.common.action_chains import ActionChains
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.support.ui import WebDriverWait
 from seleniumbase import BaseCase
 
 
-# BaseCase.main(__name__, __file__)
 class RemoteBetter():
     url_coinflip = "https://rustchance.com/coinflip"
 
@@ -22,19 +24,8 @@ class RemoteBetter():
             print("!!!!!!! DRIVER IS NOT UNDETECTABLE, LEAVING !!!!!!!")
             exit()
 
-    def tutututu(self):
-        self.sb.driver.uc_open(RemoteBetter.url_coinflip)
-
-        # print(self.sb.find_link_text("blog"))
-        # self.sb.find_link_text("blog").click()
-
-        print("\nPresence check:")
-        print(self.sb.is_element_present('.ButtonGroup__space > button[class*="Button--large"]'))
-
-        # print(self.driver.is_element_present('.ButtonGroup__space > button[class*="Button--large"]'))
-
     def load_rch_cookies(self):
-        sb = self.sb
+        sb: BaseCase = self.sb
         url_404 = "https://rustchance.com/coinfli"
         sb.driver.uc_open(url_404)
 
@@ -49,7 +40,7 @@ class RemoteBetter():
         self.sb.driver.uc_open(RemoteBetter.url_coinflip)
 
     def click_create_coinflip(self):
-        sb = self.sb
+        sb: BaseCase = self.sb
         CREATE_COINFLIP_SELECTOR = '.ButtonGroup__space .Button--large'
         CONTINUE_SELECTOR = '.Modal-body__bottom  .Landmines__lobby-actions__button'
 
@@ -59,54 +50,78 @@ class RemoteBetter():
         else:
             print("CREATE_COINFLIP visible")"""
         self.is_present_status(CREATE_COINFLIP_SELECTOR)
-        sb.highlight_click(CREATE_COINFLIP_SELECTOR)
+        sb.click(CREATE_COINFLIP_SELECTOR)
 
-        # Confirmation window about API scams etc. click CONTINUE
+        # Site shows confirmation window about API scams etc. click CONTINUE
         if self.is_present_status(CONTINUE_SELECTOR):
-            sb.highlight_click(CONTINUE_SELECTOR)
+            sb.click(CONTINUE_SELECTOR)
+
+    @staticmethod
+    def _scrape_text_create_cf_items(item):
+        """ Gets .Inventory-item and scrapes text from it.
+        Returns (name,price)
+        """
+        item_text = item.get_attribute("innerText")
+        name, price_str = item_text.split('\n')
+        if price_str.strip() == "Unsuitable":
+            price = 0.0
+        else:
+            price = float(price_str.replace('$', ''))
+        return name.strip(), price
 
     def scrap_eq_from_create_cf(self):
-        def scrape_text(item_text):
-            name, price_str = item_text.split('\n')
-            if price_str.strip() == "Unsuitable":
-                price = 0.0
-            else:
-                price = float(price_str.replace('$', ''))
-            return name.strip(), price
 
-        print("scrapping started")
-
-        sb = self.sb
+        sb: BaseCase = self.sb
 
         btns_panel: WebElement = sb.find_element('.Mdl__inv-footer .ButtonGroup__space button')
-
-        btn_deposit = btns_panel.find_element(By.XPATH, "//*[contains(text(), 'Deposit')]")
+        # btn_deposit = btns_panel.find_element(By.XPATH, "//*[contains(text(), 'Deposit')]")
         btn_refresh = btns_panel.find_element(By.XPATH, "//*[contains(text(), 'Refresh')]")
-        btn_selectall = btns_panel.find_element(By.XPATH, "//*[contains(text(), 'Select All')]")
+        # btn_selectall = btns_panel.find_element(By.XPATH, "//*[contains(text(), 'Select All')]")
+        print("Refreshing inventory")
+
+        sb.click("//*[contains(text(), 'Refresh')]", by=By.XPATH)
+        wait = WebDriverWait(sb.driver, 10)
+        _ = wait.until(EC.visibility_of_element_located((By.CLASS_NAME, "Inventory-items__inner")))
+
+        print("scrapping started")
 
         items_on_site = sb.find_elements(".Inventory-item")
         print("Items total: ", len(items_on_site))
 
         for item_on_site in items_on_site:
-            print(item_on_site.get_attribute("innerText"))
-            item_text = item_on_site.get_attribute("innerText")
-            name, price = scrape_text(item_text)
-            print("===", name, " ", price)
+            name, price = self._scrape_text_create_cf_items(item_on_site)
             if price <= 0.0:
                 continue  # unsuitable
             self.inventory.append(ItemRust(name,
-                                           price_rch_bet=price))  # to nie jest price rchshop i nie powinno tak dzialac, bo tu duza cena to lepiej
+                                           price_rch_bet=price))
 
         print("Items minus unsuitable: ", len(self.inventory))
 
-    def update_inventory(self):
-        """ Get current inventory for rustchance.
-        Czy request do api da wystarczająco info aby selenium wiedzialo co kliknac?
-        """
-        # check if cookies set
-        # fetch inv
-        # convert to itemrust
-        pass
+    def deposit_cf_items_UI(self, selected_items):
+        sb: BaseCase = self.sb
+        names_to_select = [item.name for item in selected_items]
+        
+        btns_panel: WebElement = sb.find_element('.Mdl__inv-footer .ButtonGroup__space button')
+        btn_deposit = btns_panel.find_element(By.XPATH, "//*[contains(text(), 'Deposit')]")
+        #btn_refresh = btns_panel.find_element(By.XPATH, "//*[contains(text(), 'Refresh')]")
+        #btn_selectall = btns_panel.find_element(By.XPATH, "//*[contains(text(), 'Select All')]")
+
+        wait = WebDriverWait(sb.driver, 10)
+        _ = wait.until(EC.visibility_of_element_located((By.CLASS_NAME, "Inventory-items__inner")))
+
+        items_on_site = sb.find_elements(".Inventory-item")
+
+        for item in items_on_site:
+            item_name, price = self._scrape_text_create_cf_items(item)
+            for idx, nts in enumerate(names_to_select):
+                if item_name == nts:
+                    builder = ActionChains(sb.driver)
+                    builder.move_to_element(item).click().perform()
+                    names_to_select.pop(idx)
+                    sb.sleep(0.1)
+
+        sb.sleep(2)
+        btn_deposit.click()
 
     def select_items_taxed(self, min_bet, max_bet, min_tax_frac, max_tax_frac, max_item_count=10):
         """ Select which items to bet that the bet will be taxed (in order to be able to join drop).
@@ -115,10 +130,11 @@ class RemoteBetter():
          possible to be taxed.
          There has to me an item of value between min_tax_percent*pool_size and max_tax_percent*pool_size
          """
+        compare_func = lambda item: item.price_bet / item.value_single
 
         def create_queue(inventory):
             add_queue = [*inventory]
-            add_queue.sort(key=lambda item: item.price_bet / item.value_single, reverse=True)
+            add_queue.sort(key=compare_func, reverse=True)
             taxables = []
             index, counter = 0, 0
             while index < len(add_queue):
@@ -138,7 +154,7 @@ class RemoteBetter():
             tab = PrettyTable(["name", "price", "val", "price/val"])
 
             if not itemrust_tab:
-                print("itemrus_tab: ",itemrust_tab)
+                print("itemrus_tab: ", itemrust_tab)
                 print(tab)
                 print("Total price: 0$")
                 return
@@ -146,14 +162,16 @@ class RemoteBetter():
             total_price = 0
             for i in itemrust_tab:
                 i: ItemRust
-                tab.add_row([i.name, i.price_bet, i.value_single, round(i.price_bet / i.value_single, 2)])
+                tab.add_row([i.name, i.price_bet, i.value_single,
+                             round(compare_func(i), 2)
+                             ])
                 total_price += i.price_bet
 
             print(tab)
             print(f"Total price: {round(total_price, 2)}$")
 
         def _find_good_items(queue, minp, maxp, starting_sum=0.0):
-            # TODO item limit
+
             queue = [*queue]
             items = []
             curr_sum = starting_sum
@@ -162,7 +180,7 @@ class RemoteBetter():
                 qi: ItemRust
                 new_sum = curr_sum + qi.price_bet
 
-                if hasattr(qi, 'selected') and qi.selected: # So it doesn't take taxed items two times
+                if hasattr(qi, 'selected') and qi.selected:  # So it doesn't take taxed items two times
                     continue
                 if new_sum > maxp:
                     continue
@@ -183,8 +201,8 @@ class RemoteBetter():
 
             for tax in tax_asc:
                 tax: ItemRust
-                minp = max(round(tax.price_bet / (2*max_tax_frac), 2), min_bet)
-                maxp = min(round(tax.price_bet / (2*min_tax_frac), 2), max_bet)
+                minp = max(round(tax.price_bet / (2 * max_tax_frac), 2), min_bet)
+                maxp = min(round(tax.price_bet / (2 * min_tax_frac), 2), max_bet)
                 if minp >= maxp:
                     continue
 
@@ -201,8 +219,8 @@ class RemoteBetter():
         if not (0 <= min_tax_frac <= 1 and 0 <= max_tax_frac <= 1):
             raise ValueError("min_tax_frac and max_tax_frac has to be in range <0,1>")
 
-        max_pool = 2 * max_bet     # Your and your opponent's bet
-        max_tax_general = max_tax_frac * max_pool   # Max possible tax
+        max_pool = 2 * max_bet  # Your and your opponent's bet
+        max_tax_general = max_tax_frac * max_pool  # Max possible tax
 
         add_queue, taxables = create_queue(self.inventory)  # add_queue - all items, taxables - items
 
@@ -218,24 +236,19 @@ class RemoteBetter():
 
         return selected_items
 
-    def bet(self, items):
-        """ Bet selected items """
-        pass
-
-    def bet_if_needed(self):
-        """ Bet selected items when supply period after last bet ends """
-        pass
-
     async def wait_for_winnings_and_accept(self, time, delay):
         while True:
             # fetch
             # try to accept
             await asyncio.sleep(delay)  # wait before next fetch
 
-    def is_present_status(self, selector):
-        sb = self.sb
-        var_name = [name for name, value in inspect.currentframe().f_back.f_locals.items() if value is selector][0]
-        if not sb.is_element_present(selector):
+    def is_present_status(self, selector, by=By.CSS_SELECTOR):
+        sb: BaseCase = self.sb
+        try:
+            var_name = [name for name, value in inspect.currentframe().f_back.f_locals.items() if value is selector][0]
+        except Exception as e:
+            var_name = "unknown"
+        if not sb.is_element_present(selector, by=by):
             print(var_name + " not present")
             return False
 

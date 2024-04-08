@@ -9,7 +9,9 @@ from seleniumbase import SB
 from RemoteBetter import RemoteBetter
 
 ITEMDB_FILE = "rustItemDatabase.txt"
-
+# for debugging
+LOAD_INV = 0
+TEST_MODE = True  # do not expire db and other
 
 async def body():
     # pierwsza wersja: bierze ity za x$ z podatkiem i je betuje
@@ -20,14 +22,12 @@ async def body():
     # bet selected items
     # accept gifts after that
 
-    minprice = 11.5
-    maxprice = 16
+    minprice = 11.5 - 4
+    maxprice = 16 - 4
     min_tax_frac = 0.02
     max_tax_frac = 0.1
 
-    with SB(demo=True, uc=True, uc_cdp_events=True, uc_cdp=True, test=TEST_MODE) as sb:
-        r = RemoteBetter(sb)
-
+    async def get_inventory():
         if LOAD_INV:
             with open('inventory_data.txt', 'r') as file:
                 jsonstr = file.read()
@@ -36,7 +36,7 @@ async def body():
             r.load_rch_cookies()
             r.open_site_coinflip()
             r.click_create_coinflip()
-            r.x()
+            r.scrap_eq_from_create_cf()
 
             with open('inventory_data.txt', 'w') as file:
                 jsonstr = jsonpickle.dumps(r.inventory)
@@ -56,20 +56,19 @@ async def body():
         r.inventory = list(filter(lambda x: x.all_success, r.inventory))
         print("Items minus failures: ", len(r.inventory))
 
+    with SB(demo=False, uc=True, uc_cdp_events=True, uc_cdp=True, test=TEST_MODE) as sb:
+        r = RemoteBetter(sb)
+
+        await get_inventory()
+
         selected_items = r.select_items_taxed(minprice, maxprice, min_tax_frac, max_tax_frac)
 
-        # r.update_inventory()
-        # selected_items = r.select_items_drop(minprice, maxprice)
-        # print(selected_items)
-        # r.bet_if_needed()
-        # await r.wait_for_winnings_and_accept()
+        # Select items in UI
+        r.deposit_cf_items_UI(selected_items)
+
+
 
         sb.sleep(80)
-
-
-# for debugging
-LOAD_INV = True
-TEST_MODE = False  # do not expire db
 
 
 async def main():
