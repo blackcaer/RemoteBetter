@@ -15,7 +15,7 @@ ITEMDB_FILE = "rustItemDatabase.txt"
 LOAD_INV = False        # Load inventory from file
 LOAD_5_ITEMS = False    # Trim item count to only 5. Works only with LOAD_INV == True
 TEST_MODE = False  # do not expire db and others
-HEADLESS = False
+HEADLESS = True
 
 TOKEN_FILEPATH, ACC_FILE = None, None
 
@@ -24,7 +24,7 @@ TRADE_WHITELIST = [76561199017917335, 76561199017948373]
 minprice = 11.5
 maxprice = 16.5
 
-MODE = "wotanex" #"dark"  #
+MODE = "dark"  #"wotanex" #
 DATA_DICT = {"wotanex": {"TOKEN_FILEPATH": "token_wotanex.txt",
                          "ACC_FILE": "acc_test_wotanex.txt",
                          "minprice": 7.5,
@@ -155,7 +155,7 @@ async def body():
         print("Wyszlo z petli, super")
 
 
-def _load_filenames():
+def _pre_start_operations():
     global TOKEN_FILEPATH, ACC_FILE
     try:
         TOKEN_FILEPATH = DATA_DICT[MODE]["TOKEN_FILEPATH"]
@@ -186,7 +186,7 @@ def _load_filenames():
 
 async def main():
     # Loading data:
-    _load_filenames()
+    _prestart_operations()
 
     itemdb = ItemRustDatabase(ITEMDB_FILE, do_not_expire=TEST_MODE)
     itemdb.load_database()
