@@ -81,7 +81,7 @@ class RemoteBetter():
     def scrap_eq_from_create_cf(self):
 
         sb: BaseCase = self.sb
-        wait = WebDriverWait(sb.driver, 10)
+        wait = WebDriverWait(sb.driver, 20)
 
         btns_panel: WebElement = sb.find_element('.Mdl__inv-footer .ButtonGroup__space button')
         # btn_deposit = btns_panel.find_element(By.XPATH, "//*[contains(text(), 'Deposit')]")
