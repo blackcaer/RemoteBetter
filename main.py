@@ -1,7 +1,8 @@
 import asyncio
+import configparser
 import sys
 import time
-from datetime import datetime
+from datetime import datetime, timedelta
 
 import aiohttp
 import jsonpickle
@@ -10,9 +11,8 @@ from ItemRustDatabase import ItemRustDatabase
 from SteamTradeHandler import SteamTradeHandler
 from fernet_wrapper import Wrapper
 from seleniumbase import SB
-import configparser
-from RemoteBetter import RemoteBetter
 
+from RemoteBetter import RemoteBetter
 
 
 async def update_rustitems(remote_better):
@@ -73,6 +73,11 @@ async def accept_offers(key, gifts_only, max_wait_time=None, delay=None):
     print(th.accept_all_offers(gifts_only=gifts_only))
 
 
+def time_after(sec):
+    target_time = datetime.now() + timedelta(seconds=sec)
+    return target_time.strftime("%H:%M")
+
+
 async def body():
     min_tax_frac = 0.02
     max_tax_frac = 0.05
@@ -111,15 +116,16 @@ async def body():
                 await accept_offers(key, gifts_only=False)
             except Exception as e:
                 print("Trade accept error: " + str(e))
-            print("git1")
+            print("Waiting 60sec...")
 
             await asyncio.sleep(60)
+            print("Next bet at ~", time_after(11830))
 
             try:
                 await accept_offers(key, gifts_only=False)
             except Exception as e:
                 print("Trade accept error: " + str(e))
-            print("git2")
+            print("Waiting 110sec...")
 
             await asyncio.sleep(110)
 
@@ -127,16 +133,15 @@ async def body():
                 await accept_offers(key, gifts_only=True)
             except Exception as e:
                 print("Trade accept error: " + str(e))
-            print("git3")
+            print("Waiting 710sec... (and then even longer)")
 
             # Accept trade (from site, possible winning)
             await asyncio.sleep(710)
             _ = asyncio.create_task(ItemRust.database.save_database_async())  # Not awaited because there's no need to
             for i in range(11):
                 await asyncio.sleep(1000)
-                print(f"Sleep {i * 100} sec passed")
+                print(f"Sleep {(i + 1) * 100}/11000 sec passed")
         print("Wyszlo z petli, super")
-
 
 
 def read_config(filename):
@@ -172,6 +177,8 @@ def read_config(filename):
             'maxprice': config.getfloat('Global', 'maxprice_dark')
         }
     }
+
+
 def _pre_start_operations():
     read_config('config.txt')
 
@@ -217,6 +224,12 @@ async def main():
     itemdb.load_database()
     ItemRust.set_database(itemdb)
     ItemRustDatabase._verbose_level = 1
+
+    if len(arguments) > 1:
+        wait_time = int(arguments[1])
+        print(f"Waiting {wait_time}s before start. Start at ~",time_after(wait_time))
+
+        await asyncio.sleep(wait_time)
 
     async with aiohttp.ClientSession() as session:
         ItemRust.set_session(session)
