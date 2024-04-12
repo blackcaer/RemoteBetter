@@ -1,5 +1,8 @@
 import asyncio
+import sys
 import time
+from datetime import datetime
+
 import aiohttp
 import jsonpickle
 from ItemRust import ItemRust
@@ -7,34 +10,9 @@ from ItemRustDatabase import ItemRustDatabase
 from SteamTradeHandler import SteamTradeHandler
 from fernet_wrapper import Wrapper
 from seleniumbase import SB
-
+import configparser
 from RemoteBetter import RemoteBetter
 
-ITEMDB_FILE = "rustItemDatabase.txt"
-# for debugging
-LOAD_INV = False        # Load inventory from file
-LOAD_5_ITEMS = False    # Trim item count to only 5. Works only with LOAD_INV == True
-TEST_MODE = False  # do not expire db and others
-HEADLESS = True
-
-TOKEN_FILEPATH, ACC_FILE = None, None
-
-TRADE_WHITELIST = [76561199017917335, 76561199017948373]
-
-minprice = 11.5
-maxprice = 16.5
-
-MODE = "dark"  #"wotanex" #
-DATA_DICT = {"wotanex": {"TOKEN_FILEPATH": "token_wotanex.txt",
-                         "ACC_FILE": "acc_test_wotanex.txt",
-                         "minprice": 7.5,
-                         "maxprice": 12.5
-                         },
-             "dark": {"TOKEN_FILEPATH": "token_dark.txt",
-                      "ACC_FILE": "acc_test_las3k.txt",
-                      "minprice": 11.5,
-                      "maxprice": 16.5}
-             }
 
 
 async def update_rustitems(remote_better):
@@ -71,7 +49,7 @@ async def get_inventory(remote_better):
         with open('inventory_data.txt', 'r') as file:
             jsonstr = file.read()
             remote_better.inventory = jsonpickle.loads(jsonstr)
-            if LOAD_5_ITEMS:    # for debugging
+            if LOAD_5_ITEMS:  # for debugging
                 remote_better.inventory = remote_better.inventory[:5]
             else:
                 remote_better.inventory = remote_better.inventory
@@ -99,13 +77,15 @@ async def body():
     min_tax_frac = 0.02
     max_tax_frac = 0.05
 
-    # key = Wrapper.key_from_pass(password=input("Provide password: "))
-    with open("testpass.txt", 'r') as file:
-        key = Wrapper.key_from_pass(file.read())
-        print("PASS FROM FILE USED")
+    if not LOAD_PASS:  # for debugging
+        key = Wrapper.key_from_pass(password=input("Provide password: "))
+    else:
+        with open("testpass.txt", 'r') as file:
+            key = Wrapper.key_from_pass(file.read())
+            print("PASS FROM FILE USED")
 
-    #print("WAITING 10 MIN, DELETE THAT")
-    #await asyncio.sleep(600)
+    # print("WAITING 10 MIN, DELETE THAT")
+    # await asyncio.sleep(600)
 
     while True:
         with SB(demo=False, uc=True, uc_cdp_events=True, uc_cdp=True, test=TEST_MODE, headless=HEADLESS) as sb:
@@ -123,14 +103,17 @@ async def body():
 
             _ = asyncio.create_task(ItemRust.database.save_database_async())  # Not awaited because there's no need to
 
+            print("Time: ", datetime.now().strftime("%d-%m %H:%M"))
+
             # Accept trade (to site)
             try:
+                await asyncio.sleep(5)
                 await accept_offers(key, gifts_only=False)
             except Exception as e:
                 print("Trade accept error: " + str(e))
             print("git1")
 
-            await asyncio.sleep(80)
+            await asyncio.sleep(60)
 
             try:
                 await accept_offers(key, gifts_only=False)
@@ -147,7 +130,7 @@ async def body():
             print("git3")
 
             # Accept trade (from site, possible winning)
-            await asyncio.sleep(730)
+            await asyncio.sleep(710)
             _ = asyncio.create_task(ItemRust.database.save_database_async())  # Not awaited because there's no need to
             for i in range(11):
                 await asyncio.sleep(1000)
@@ -155,16 +138,55 @@ async def body():
         print("Wyszlo z petli, super")
 
 
+
+def read_config(filename):
+    config = configparser.ConfigParser()
+    config.read(filename)
+
+    global ITEMDB_FILE, LOAD_PASS, LOAD_INV, LOAD_5_ITEMS, TEST_MODE, HEADLESS
+    global TRADE_WHITELIST, MODE
+    global DATA_DICT
+
+    ITEMDB_FILE = config.get('Global', 'ITEMDB_FILE')
+    LOAD_PASS = config.getboolean('Global', 'LOAD_PASS')
+    LOAD_INV = config.getboolean('Global', 'LOAD_INV')
+    LOAD_5_ITEMS = config.getboolean('Global', 'LOAD_5_ITEMS')
+    TEST_MODE = config.getboolean('Global', 'TEST_MODE')
+    HEADLESS = config.getboolean('Global', 'HEADLESS')
+
+    TRADE_WHITELIST = [int(id.strip()) for id in config.get('Global', 'TRADE_WHITELIST').split(',')]
+
+    MODE = config.get('Global', 'MODE')
+
+    DATA_DICT = {
+        'wotanex': {
+            'TOKEN_FILEPATH': config.get('Global', 'TOKEN_FILEPATH_wotanex'),
+            'ACC_FILE': config.get('Global', 'ACC_FILE_wotanex'),
+            'minprice': config.getfloat('Global', 'minprice_wotanex'),
+            'maxprice': config.getfloat('Global', 'maxprice_wotanex')
+        },
+        'dark': {
+            'TOKEN_FILEPATH': config.get('Global', 'TOKEN_FILEPATH_dark'),
+            'ACC_FILE': config.get('Global', 'ACC_FILE_dark'),
+            'minprice': config.getfloat('Global', 'minprice_dark'),
+            'maxprice': config.getfloat('Global', 'maxprice_dark')
+        }
+    }
 def _pre_start_operations():
-    global TOKEN_FILEPATH, ACC_FILE
+    read_config('config.txt')
+
+    global TOKEN_FILEPATH, ACC_FILE, minprice, maxprice
     try:
-        TOKEN_FILEPATH = DATA_DICT[MODE]["TOKEN_FILEPATH"]
-        ACC_FILE = DATA_DICT[MODE]["ACC_FILE"]
+        data = DATA_DICT[MODE]
+        TOKEN_FILEPATH = data["TOKEN_FILEPATH"]
+        ACC_FILE = data["ACC_FILE"]
+        minprice = data["minprice"]
+        maxprice = data["maxprice"]
     except Exception as e:
         print("Error while assigning data (probably wrong mode name)\n" + str(e))
-        exit()
+        sys.exit()
 
-    print("Mode = ",MODE)
+    print("Mode = ", MODE)
     if "dark" not in DATA_DICT.keys():
         raise RuntimeError("dark not in DATA_DICT, possible miss while trying to warn to use vpn")
     if MODE == "dark":
@@ -186,11 +208,15 @@ def _pre_start_operations():
 
 async def main():
     # Loading data:
-    _prestart_operations()
+    arguments = sys.argv[:]
+    print("Arguments:", arguments)
+
+    _pre_start_operations()
 
     itemdb = ItemRustDatabase(ITEMDB_FILE, do_not_expire=TEST_MODE)
     itemdb.load_database()
     ItemRust.set_database(itemdb)
+    ItemRustDatabase._verbose_level = 1
 
     async with aiohttp.ClientSession() as session:
         ItemRust.set_session(session)
