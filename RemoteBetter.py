@@ -129,6 +129,7 @@ class RemoteBetter():
                     ActionChains(sb.driver).move_to_element(item).click().perform()
                     names_to_select.pop(idx)
                     await asyncio.sleep(0.2)
+                    break
 
         print("Clicking depo in 2sec")
         await asyncio.sleep(2)
