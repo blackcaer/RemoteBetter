@@ -11,8 +11,8 @@ from ItemRust import ItemRust
 from ItemRustDatabase import ItemRustDatabase
 from SteamTradeHandler import SteamTradeHandler
 from fernet_wrapper import Wrapper
-from seleniumbase import SB
 from selenium.webdriver.remote.webelement import WebElement
+from seleniumbase import SB
 
 from RemoteBetter import RemoteBetter
 
@@ -40,10 +40,11 @@ async def update_rustitems(remote_better):
 
     end_time = time.time()
     execution_time = end_time - start_time
-    print("Czas wykonania:", execution_time, "sekund")
+    print("Czas wykonania:", round(execution_time, 2), "sekund")
 
     remote_better.inventory = list(filter(lambda x: x.all_success, remote_better.inventory))
     print("Items minus failures: ", len(remote_better.inventory))
+
 
 async def test(remote_better):
     ".pt-intent-danger"
@@ -52,11 +53,11 @@ async def test(remote_better):
     r.sb.driver.uc_open("https://rustchance.com/easter-event")
     btns = r.sb.find_elements(".event-button.event-case__open")
     print(r.sb.is_element_present(".pt-intent-danger"))
-    #print(".event-button.event-case__open")
-    1==1
+    # print(".event-button.event-case__open")
+    1 == 1
 
     print(r.sb.is_element_present(".supplydrops-button"))
-    spl=r.sb.find_element(".supplydrops-button")
+    spl = r.sb.find_element(".supplydrops-button")
     spl.click()
     await asyncio.sleep(6)
     print(r.sb.is_element_in_an_iframe(".ctp-checkbox-label"))
@@ -64,7 +65,6 @@ async def test(remote_better):
     r.sb.click(".ctp-checkbox-label")  # Kliknij przycisk z klasą .ctp-checkbox-label
 
     print(r.sb.is_element_present(".pt-intent-danger"))
-
 
     await asyncio.sleep(20)
     btns[0].click()
@@ -74,21 +74,20 @@ async def test(remote_better):
     btns[0].click()
 
     print(r.sb.is_element_present(".pt-intent-danger"))
-    #await asyncio.sleep(8)
+    # await asyncio.sleep(8)
 
     warns = r.sb.find_elements(".pt-intent-danger")
     warn = warns[0]
 
     for warn in warns:
-        warn:WebElement
+        warn: WebElement
         print(warn.text)
 
     print("slep")
     await asyncio.sleep(10)
 
-
-
     return
+
 
 async def get_inventory(remote_better):
     if LOAD_INV:
@@ -205,16 +204,16 @@ def read_config(filename):
 
     DATA_DICT = {
         'wotanex': {
-            'TOKEN_FILEPATH': config.get('Global', 'TOKEN_FILEPATH_wotanex',fallback=None),
-            'ACC_FILE': config.get('Global', 'ACC_FILE_wotanex',fallback=None),
-            'minprice': config.getfloat('Global', 'minprice_wotanex',fallback=None),
-            'maxprice': config.getfloat('Global', 'maxprice_wotanex',fallback=None)
+            'TOKEN_FILEPATH': config.get('Global', 'TOKEN_FILEPATH_wotanex', fallback=None),
+            'ACC_FILE': config.get('Global', 'ACC_FILE_wotanex', fallback=None),
+            'minprice': config.getfloat('Global', 'minprice_wotanex', fallback=None),
+            'maxprice': config.getfloat('Global', 'maxprice_wotanex', fallback=None)
         },
         'dark': {
-            'TOKEN_FILEPATH': config.get('Global', 'TOKEN_FILEPATH_dark',fallback=None),
-            'ACC_FILE': config.get('Global', 'ACC_FILE_dark',fallback=None),
-            'minprice': config.getfloat('Global', 'minprice_dark',fallback=None),
-            'maxprice': config.getfloat('Global', 'maxprice_dark',fallback=None)
+            'TOKEN_FILEPATH': config.get('Global', 'TOKEN_FILEPATH_dark', fallback=None),
+            'ACC_FILE': config.get('Global', 'ACC_FILE_dark', fallback=None),
+            'minprice': config.getfloat('Global', 'minprice_dark', fallback=None),
+            'maxprice': config.getfloat('Global', 'maxprice_dark', fallback=None)
         }
     }
 
@@ -260,6 +259,7 @@ def _pre_start_operations():
             global_key = Wrapper.key_from_pass(file.read())
             print("PASS FROM FILE USED")
 
+
 async def main():
     # Loading data:
     arguments = sys.argv[:]
@@ -274,7 +274,7 @@ async def main():
 
     if len(arguments) > 1:
         wait_time = int(arguments[1])
-        print(f"Waiting {wait_time}s before start. Start at ~",time_after(wait_time))
+        print(f"Waiting {wait_time}s before start. Start at ~", time_after(wait_time))
 
         await asyncio.sleep(wait_time)
 
