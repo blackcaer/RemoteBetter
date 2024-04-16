@@ -16,15 +16,11 @@ from seleniumbase import SB
 
 from RemoteBetter import RemoteBetter
 
+VERBOSE_LVL = 1
+
 
 async def update_rustitems(remote_better):
     tasks = []
-
-    # stworz liste unikalnych itow
-    # update ich
-    # sklonuj je odpowiednia ilosc razy?
-    # czy lepiej quantity na nich ustawic
-
     start_time = time.time()
 
     for item in remote_better.inventory:
@@ -52,19 +48,18 @@ async def test(remote_better):
     r.load_rch_cookies(TOKEN_FILEPATH)
     r.sb.driver.uc_open("https://rustchance.com/easter-event")
     btns = r.sb.find_elements(".event-button.event-case__open")
-    print(r.sb.is_element_present(".pt-intent-danger"))
+    print("(test) ", r.sb.is_element_present(".pt-intent-danger"))
     # print(".event-button.event-case__open")
-    1 == 1
 
-    print(r.sb.is_element_present(".supplydrops-button"))
+    print("(test) ", r.sb.is_element_present(".supplydrops-button"))
     spl = r.sb.find_element(".supplydrops-button")
     spl.click()
     await asyncio.sleep(6)
-    print(r.sb.is_element_in_an_iframe(".ctp-checkbox-label"))
+    print("(test) ", r.sb.is_element_in_an_iframe(".ctp-checkbox-label"))
     r.sb.switch_to_frame(0)  # Przełącz na pierwszy iframe na stronie
     r.sb.click(".ctp-checkbox-label")  # Kliknij przycisk z klasą .ctp-checkbox-label
 
-    print(r.sb.is_element_present(".pt-intent-danger"))
+    print("(test) ", r.sb.is_element_present(".pt-intent-danger"))
 
     await asyncio.sleep(20)
     btns[0].click()
@@ -73,7 +68,7 @@ async def test(remote_better):
     await asyncio.sleep(1)
     btns[0].click()
 
-    print(r.sb.is_element_present(".pt-intent-danger"))
+    print("(test) ", r.sb.is_element_present(".pt-intent-danger"))
     # await asyncio.sleep(8)
 
     warns = r.sb.find_elements(".pt-intent-danger")
@@ -83,7 +78,7 @@ async def test(remote_better):
         warn: WebElement
         print(warn.text)
 
-    print("slep")
+    print("(test) ", "slep")
     await asyncio.sleep(10)
 
     return
@@ -112,10 +107,24 @@ async def get_inventory(remote_better):
     await update_rustitems(remote_better)
 
 
-async def accept_offers(key, gifts_only, max_wait_time=None, delay=None):
-    print("Accept offers...")
-    th = SteamTradeHandler.create_account_from_encrypted_file(key, ACC_FILE, TRADE_WHITELIST)
-    print(th.accept_all_offers(gifts_only=gifts_only))
+async def accept_offers(key, gifts_only, tries=1, delay=5):
+    print("Accepting offers...")
+    resp = None
+    for i in range(tries):
+        try:
+            th = SteamTradeHandler.create_account_from_encrypted_file(key, ACC_FILE, TRADE_WHITELIST)
+            resp = th.accept_all_offers(gifts_only=gifts_only)
+            print(resp)
+        except Exception as e:
+            print("Trade accept error: " + str(e))
+
+        if resp:  # Good
+            return resp
+
+        print(f"Waiting {delay}s for try {i + 2}/{tries}...\n")
+        await asyncio.sleep(delay)
+
+    return False  # Response was never true, accepting failed
 
 
 def time_after(sec):
@@ -147,35 +156,22 @@ async def body():
 
             _ = asyncio.create_task(ItemRust.database.save_database_async())  # Not awaited because there's no need to
 
-            print("Time: ", datetime.now().strftime("%d-%m %H:%M"))
+            print("===== Time: ", datetime.now().strftime("%d-%m %H:%M"))
+            print("===== Next bet at ~", time_after(11890))
 
             # Accept trade (to site)
-            try:
-                await asyncio.sleep(5)
-                await accept_offers(global_key, gifts_only=False)
-            except Exception as e:
-                print("Trade accept error: " + str(e))
-            print("Waiting 60sec...")
+            await asyncio.sleep(10)
+            await accept_offers(global_key, tries=5, delay=10, gifts_only=False)
 
-            await asyncio.sleep(60)
-            print("Next bet at ~", time_after(11830))
-
-            try:
-                await accept_offers(global_key, gifts_only=False)
-            except Exception as e:
-                print("Trade accept error: " + str(e))
-            print("Waiting 110sec...")
-
-            await asyncio.sleep(110)
-
-            try:
-                await accept_offers(global_key, gifts_only=True)
-            except Exception as e:
-                print("Trade accept error: " + str(e))
-            print("Waiting 710sec... (and then even longer)")
+            print("Waiting 90sec...")
 
             # Accept trade (from site, possible winning)
-            await asyncio.sleep(710)
+            await asyncio.sleep(90)
+            await accept_offers(global_key, tries=3, delay=70, gifts_only=True)
+
+            print("Waiting 560s... (and then even longer)")
+
+            await asyncio.sleep(560)
             _ = asyncio.create_task(ItemRust.database.save_database_async())  # Not awaited because there's no need to
             for i in range(11):
                 await asyncio.sleep(1000)
@@ -270,7 +266,7 @@ async def main():
     itemdb = ItemRustDatabase(ITEMDB_FILE, do_not_expire=TEST_MODE)
     itemdb.load_database()
     ItemRust.set_database(itemdb)
-    ItemRustDatabase._verbose_level = 1
+    ItemRustDatabase._verbose_level = VERBOSE_LVL
 
     if len(arguments) > 1:
         wait_time = int(arguments[1])
